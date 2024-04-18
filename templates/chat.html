@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Importando JQUERY -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+
+    <title>Bate-papo</title>
+
+
+
+</head>
+<body>
+
+<style>
+    body, html {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    font-family: Arial, sans-serif;
+}
+
+.chat-container {
+    width: 100%;
+    height: 100%;
+    background-color: #9dc59d;
+    display: flex;
+    flex-direction: column;
+}
+
+.chat-header {
+    background-color: #405441;
+    color: white;
+    font-size: 24px;
+    padding: 10px;
+    text-align: center;
+}
+
+.chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 10px;
+}
+
+.message {
+    margin-bottom: 10px;
+}
+
+.user {
+    font-weight: bold;
+    color: #4CAF50;
+}
+
+.message-text {
+    background-color: #ffffff;
+    border-radius: 10px;
+    padding: 10px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    word-wrap: break-word;
+}
+
+.message-input {
+    padding: 10px;
+    display: flex;
+    align-items: center;
+    background-color: #ffffff;
+    box-shadow: 0 -2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.message-input select {
+    flex: 1;
+    padding: 8px;
+    border: none;
+    border-radius: 20px;
+    margin-right: 5px;
+    outline: none;
+}
+
+
+.message-input input {
+    flex: 1;
+    padding: 8px;
+    border: none;
+    border-radius: 20px;
+    margin-right: 5px;
+    outline: none;
+}
+
+
+.message-input button {
+    padding: 8px 16px;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 20px;
+    cursor: pointer;
+    outline: none;
+    transition: background-color 0.3s;
+}
+
+.message-input button:hover {
+    background-color: #45a049;
+}
+
+</style>
+
+    <div class="chat-container">
+        <form action="/chat" method="post"></form>
+        <div class="chat-header">Chat</div>
+        <div class="chat-messages" id="chat-messages">
+            <!-- Mensagens aparecerão aqui -->
+        </div>
+        <div class="message-input">
+            <select name="usuario" id="usuario" onChange='recuperaMensagens()'>
+            <option value="telefone">Nome</option>
+            </select>
+            <input type="text" id="message" placeholder="Digite sua mensagem">
+            <button onclick="enviarMensagem()">Enviar</button>
+
+
+        </div>
+    </div>
+
+ 
+
+    <script type="text/javascript">
+        function solicita_usuarios(){
+            $.ajax({
+                url: "/retorna_usuarios",
+                type: "GET",
+                success: function(usuarios){
+                    for (let i = 0; i <usuarios.length; i++){
+                         let texto_html = '<option value="'+usuarios[i]['telefone']+'">'+usuarios[i]['nome']+'</option>'
+                        $('#usuario').append(texto_html)
+                    }
+                },
+                error: function(){
+                    alert("Erro ao recuperar os usuarios!")
+                }
+        })
+    }
+
+    $(document).ready(solicita_usuarios())
+
+    </script>
+
+    <script type="text/javascript">
+        function recuperaMensagens(){
+            $.ajax({
+                url:'/get/mensagens/' + $("#usuario").val(),
+                type: 'GET',
+                success: function(lista_mensagens){
+                    
+                    $('#chat-messages').empty()
+                    console.log("Consegui entrar!")
+                    for(let index = 0; index < lista_mensagens.length; index++){
+                        let tag = lista_mensagens[index]["nome"]+": "+"<p>" + lista_mensagens[index]["mensagem"]+"<p>"
+                            $("#chat-messages").append(tag)
+                    }
+
+                }
+            })
+        }
+
+        $(document).ready(recuperaMensagens)
+    </script>
+
+<script type="text/javascript">
+    function enviarMensagem() {
+        let mensagem = $("input[type='text']").val();
+        let tel_destinatario = $("#usuario").val();
+
+        if (mensagem !== "" && tel_destinatario !== "telefone") {
+            let dados = {
+                mensagem: mensagem,
+                tel_destinatario: tel_destinatario
+            };
+
+            $.ajax({
+                url: "/enviar_mensagem",
+                type: "POST",
+                contentType: "application/json", 
+                data: JSON.stringify(dados), 
+                success: function(response) {
+                    console.log("Mensagem enviada com sucesso:", response);
+                    $("input[type='text']").val("");
+                    recuperaMensagens();
+                },
+                error: function() {
+                    alert("Erro ao enviar mensagem!");
+                }
+            });
+        }
+    }
+
+    $(document).ready(function() {
+        $("button").click(enviarMensagem);
+    });
+</script>
+
+
+
+    
+
+  
+
+</body>
+</html>
